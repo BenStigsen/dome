@@ -101,11 +101,21 @@ class Color is Vector {
   construct new() {
     super()
   }
+
   construct new(r, g, b) {
     super(r, g, b, 255)
+    verifyRange()
   }
   construct new(r, g, b, a) {
     super(r, g, b, a)
+    verifyRange()
+  }
+
+  verifyRange() {
+    if (r < 0 || 255 < r) Fiber.abort("Red channel out of range")
+    if (g < 0 || 255 < g) Fiber.abort("Green channel out of range")
+    if (b < 0 || 255 < b) Fiber.abort("Blue channel out of range")
+    if (a < 0 || 255 < a) Fiber.abort("Alpha channel out of range")
   }
 
   toNum {
