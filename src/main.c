@@ -146,10 +146,7 @@ LOOP_processInput(LOOP_STATE* state) {
         break;
       case SDL_WINDOWEVENT:
         {
-          if (event.window.event == SDL_WINDOWEVENT_RESIZED ||
-              event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-            SDL_RenderGetViewport(engine->renderer, &(engine->viewport));
-          } else if (event.window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
+          if (event.window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
             AUDIO_ENGINE_pause(engine->audioEngine);
             state->windowBlurred = true;
           } else if (event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED) {
@@ -332,6 +329,21 @@ printUsage(ENGINE* engine) {
   ENGINE_printLog(engine, "  -h --help           Show this screen.\n");
   ENGINE_printLog(engine, "  -r --record=<gif>   Record video to <gif>.\n");
   ENGINE_printLog(engine, "  -v --version        Show version.\n");
+}
+
+internal int
+LOOP_resizingEventWatcher(void* data, SDL_Event* event) {
+  ENGINE* engine = (ENGINE*) data;
+  if (event->type == SDL_WINDOWEVENT &&
+      event->window.event == SDL_WINDOWEVENT_RESIZED) {
+    SDL_RenderGetViewport(engine->renderer, &(engine->viewport));
+  } else if (event->type == SDL_WINDOWEVENT &&
+      event->window.event == SDL_WINDOWEVENT_EXPOSED) {
+    SDL_RenderClear(engine->renderer);
+    SDL_RenderCopy(engine->renderer, engine->texture, NULL, NULL);
+    SDL_RenderPresent(engine->renderer);
+  }
+  return 0;
 }
 
 int main(int argc, char* args[])
@@ -561,6 +573,8 @@ int main(int argc, char* args[])
   SDL_SetWindowPosition(engine.window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
   SDL_ShowWindow(engine.window);
   SDL_SetRenderDrawColor(engine.renderer, 0x00, 0x00, 0x00, 0xFF);
+  LOOP_flip(&loop);
+  SDL_AddEventWatch(LOOP_resizingEventWatcher, &engine);
 
   // Resizing from init must happen before we begin recording
   if (engine.record.makeGif) {
